@@ -10,4 +10,4 @@
 POSTMAN:
 https://www.getpostman.com/collections/a013ba9e978c0bbdc3db
 
-Sql ada di folder
+Sql ada di folder "files/sql.db"
