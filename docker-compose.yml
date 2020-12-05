@@ -1,0 +1,17 @@
+version: '3.6'
+services:
+ xettle-backend:
+  container_name: xettle-backend
+  image: xettle-backend:latest
+  restart: always
+  hostname: xettle-backend
+  ports:
+      - "8910:3000"
+  volumes:
+   - ./static:/go/src/xettle-backend/static
+networks:
+  default:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.191.38.0/24
