@@ -136,7 +136,7 @@ func (h *UserHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {
 //Login ...
 func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 
-	phonenumber := r.FormValue("phone_number")
+	phonenumber := r.FormValue("username")
 	pin := r.FormValue("pin")
 
 	if phonenumber == "" && pin == "" {
@@ -149,32 +149,6 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	userUc := usecase.UserUC{ContractUC: h.ContractUC}
 	res, err := userUc.Login(phonenumber, pin)
-	if err != nil {
-		SendBadRequest(w, err.Error())
-		return
-	}
-	SendSuccess(w, res, nil)
-	return
-}
-
-//SetPin ...
-func (h *UserHandler) SetPin(w http.ResponseWriter, r *http.Request) {
-
-	req := request.UserSetPin{}
-	if err := h.Handler.Bind(r, &req); err != nil {
-		SendBadRequest(w, err.Error())
-		return
-	}
-	if err := h.Handler.Validate.Struct(req); err != nil {
-		h.SendRequestValidationError(w, err.(validator.ValidationErrors))
-		return
-	}
-
-	// Get logrus request ID
-	h.ContractUC.ReqID = getHeaderReqID(r)
-
-	userUc := usecase.UserUC{ContractUC: h.ContractUC}
-	res, err := userUc.SetPin(req)
 	if err != nil {
 		SendBadRequest(w, err.Error())
 		return

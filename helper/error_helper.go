@@ -221,4 +221,6 @@ var (
 	BankNotFound = "bank_not_found"
 	// PhoneNotValidated ...
 	PhoneNotValidated = "phone_not_validated"
+	// PasswordNotMatch ...
+	PasswordNotMatch = "password_not_match"
 )

@@ -31,8 +31,7 @@ type UserRegisterVM struct {
 
 //UserLoginVM ...
 type UserLoginVM struct {
-	Token       string `json:"token"`
-	ExpiredDate string `json:"expired_date"`
+	ID string `json:"id"`
 }
 
 //NewpinVM ...

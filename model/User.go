@@ -28,7 +28,7 @@ type IUser interface {
 type UserEntity struct {
 	ID               string         `db:"id"`
 	Name             sql.NullString `db:"name"`
-	PhoneNumber      sql.NullString `db:"phone_number"`
+	PhoneNumber      sql.NullString `db:"username"`
 	PhoneValidatedAt sql.NullString `db:"phone_validated_at"`
 	Pin              sql.NullString `db:"pin"`
 	CreatedAt        sql.NullString `db:"createdAt"`
@@ -114,12 +114,12 @@ func (model userModel) GrepPin(id string) (data string, err error) {
 // Store ...
 func (model userModel) Store(data viewmodel.UserStoreVM) (res UserEntity, err error) {
 	query := `
-		INSERT INTO "users" ("phone_number", "name", "created_at", "updated_at")
-		VALUES ($1, $2, $3, $3)
-		RETURNING "id", "phone_number", "name"
+		INSERT INTO "users" ("username", "name", "pin", "created_at", "updated_at")
+		VALUES ($1, $2, $3, $4, $4)
+		RETURNING "id", "username", "name"
 	`
 	err = model.DB.QueryRow(
-		query, data.PhoneNumber, data.Name, data.CreatedAt,
+		query, data.PhoneNumber, data.Name, data.Pin, data.CreatedAt,
 	).Scan(&res.ID, &res.PhoneNumber, &res.Name)
 
 	return res, err
@@ -141,14 +141,14 @@ func (model userModel) ValidatedOTP(id string, now time.Time) (res string, err e
 //FindByPhoneNumber ...
 func (model userModel) FindByPhoneNumber(PhoneNumber string) (data UserEntity, err error) {
 	query := `
-		SELECT "id", "name", "phone_number", "pin", 
-		"phone_validated_at", "created_at", "updated_at", 
+		SELECT "id", "name", "username", "pin", 
+		"created_at", "updated_at", 
 		"deleted_at" from users
-		WHERE "phone_number"=$1 AND "deleted_at" is null
+		WHERE "username"=$1 AND "deleted_at" is null
 	`
 	err = model.DB.QueryRow(query, PhoneNumber).Scan(
 		&data.ID, &data.Name, &data.PhoneNumber, &data.Pin,
-		&data.PhoneValidatedAt, &data.CreatedAt, &data.UpdatedAt,
+		&data.CreatedAt, &data.UpdatedAt,
 		&data.DeletedAt)
 
 	return data, err

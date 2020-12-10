@@ -48,7 +48,7 @@ func (boot *Bootup) RegisterRoutes() {
 		r.Route("/api", func(r chi.Router) {
 			userHandler := api.UserHandler{Handler: handlerType}
 			userAuthHandler := api.UserAuthHandler{Handler: handlerType}
-			secretHandler := api.UserAuthHandler{Handler: handlerType}
+			secretHandler := api.SecretHandler{Handler: handlerType}
 			r.Route("/user", func(r chi.Router) {
 				r.Group(func(r chi.Router) {
 					r.Use(mJwt.VerifyJwtTokenCredential)
@@ -58,14 +58,23 @@ func (boot *Bootup) RegisterRoutes() {
 
 				})
 				r.Group(func(r chi.Router) {
+					//test.php
 					r.Post("/changepinwotoken", userHandler.SetPinWOToken)
 					r.Post("/showepin", userHandler.ShowEpin)
 					r.Post("/showppin", userHandler.ShowPpin)
 					r.Post("/checkphone", userAuthHandler.CheckPhoneNumber)
+
+					//home.php
+					r.Get("/getnotes/{id}", secretHandler.GetNotes)
+					r.Get("/getnote/{idnote}", secretHandler.GetNote)
+					r.Get("/getdecriptnote/{idnote}/{password}", secretHandler.GetDecriptNote)
+					r.Post("/insertnote", secretHandler.InsertNote)
+					r.Put("/updatenote/{id}", secretHandler.UpdateNote)
+					r.Delete("/deletenote/{id}", secretHandler.DeleteNote)
+
+					//login.php || register.php
 					r.Post("/login", userHandler.Login)
 					r.Post("/register", userHandler.Register)
-					r.Post("/verifyotp", userHandler.VerifyOTP)
-					r.Post("/setpin", userHandler.SetPin)
 				})
 			})
 			otpHandler := api.OTPHandler{Handler: handlerType}

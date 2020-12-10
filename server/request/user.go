@@ -3,7 +3,8 @@ package request
 //UserRegisterRequest ...
 type UserRegisterRequest struct {
 	Name        string `json:"name"`
-	PhoneNumber string `json:"phone_number" validate:"required"`
+	PhoneNumber string `json:"username" validate:"required"`
+	Pin         string `json:"pin" validate:"required"`
 }
 
 //UserVerifyOTP ...
@@ -38,6 +39,6 @@ type UserVerifyPinRequest struct {
 
 //UserLoginRequest ...
 type UserLoginRequest struct {
-	PhoneNumber string `json:"phone_number" validate:"required"`
+	PhoneNumber string `json:"username" validate:"required"`
 	Pin         string `json:"pin"`
 }

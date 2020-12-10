@@ -6,7 +6,6 @@ import (
 	"xettle-backend/helper"
 	"xettle-backend/model"
 	"xettle-backend/pkg/logruslogger"
-	"xettle-backend/pkg/str"
 	"xettle-backend/server/request"
 	"xettle-backend/usecase/viewmodel"
 )
@@ -195,10 +194,17 @@ func (uc UserUC) Register(data request.UserRegisterRequest) (res viewmodel.UserR
 		return res, err
 	}
 
+	Pin, err := uc.Aes.Encrypt(data.Pin)
+	if err != nil {
+		logruslogger.Log(logruslogger.WarnLevel, data.PhoneNumber, ctx, "encrypt_password", uc.ReqID)
+		return res, err
+	}
+
 	now := time.Now().UTC()
 	datavm := viewmodel.UserStoreVM{
 		Name:        data.Name,
 		PhoneNumber: data.PhoneNumber,
+		Pin:         Pin,
 		CreatedAt:   now.Format(time.RFC3339),
 		UpdatedAt:   now.Format(time.RFC3339),
 	}
@@ -209,21 +215,10 @@ func (uc UserUC) Register(data request.UserRegisterRequest) (res viewmodel.UserR
 		return res, errors.New(helper.StoreFailed)
 	}
 
-	//Generate OTP
-	ResOtp := str.RandomNumericString(4)
-
-	//Save To Redis
-	SaveRedis := uc.StoreToRedisExp(results.ID, &ResOtp, OtpLifetime)
-	if SaveRedis != nil {
-		logruslogger.Log(logruslogger.WarnLevel, err.Error(), ctx, "invalid_save_to_redis", uc.ReqID)
-		return res, err
-	}
-
 	res = viewmodel.UserRegisterVM{
 		ID:          results.ID,
 		Name:        results.Name.String,
 		PhoneNumber: results.PhoneNumber.String,
-		OTP:         ResOtp,
 	}
 	return res, err
 }
@@ -284,21 +279,8 @@ func (uc UserUC) Login(PhoneNumber, Pin string) (res viewmodel.UserLoginVM, err 
 		return res, err
 
 	}
-	if results.PhoneValidatedAt.String == "" {
-		logruslogger.Log(logruslogger.WarnLevel, PhoneNumber, ctx, "phone_not_verified", uc.ReqID)
-		return res, errors.New(helper.PhoneNotValidated)
-	}
-	if results.Pin.String == "" {
-		logruslogger.Log(logruslogger.WarnLevel, PhoneNumber, ctx, "pin_unset", uc.ReqID)
-		return res, errors.New(helper.PinUnset)
-	}
 
 	authUc := AuthUC{ContractUC: uc.ContractUC}
-	// passwordInput, err := authUc.DecryptedOnly(Pin)
-	// if err != nil {
-	// 	logruslogger.Log(logruslogger.WarnLevel, err.Error(), ctx, "query", uc.ReqID)
-	// 	return res, err
-	// }
 
 	NewPinDB, err := authUc.DecryptedDBPin(results.Pin.String)
 	if err != nil {
@@ -311,48 +293,7 @@ func (uc UserUC) Login(PhoneNumber, Pin string) (res viewmodel.UserLoginVM, err 
 		return res, errors.New(helper.InvalidLogin)
 	}
 
-	// Jwe the payload & Generate jwt token
-	res.Token, res.ExpiredDate, err = uc.GenerateJwtToken(results.ID, "user")
-	return res, err
-}
-
-//SetPin ...
-func (uc UserUC) SetPin(data request.UserSetPin) (res viewmodel.UserLoginVM, err error) {
-	ctx := "UserUC.SetPin"
-
-	userModel := model.NewUserModel(uc.DB)
-	UserData, err := userModel.FindByPhoneNumber(data.PhoneNumber)
-	if err != nil {
-		logruslogger.Log(logruslogger.WarnLevel, UserData.ID, ctx, "user_not_found", uc.ReqID)
-		return res, errors.New(helper.UserNotFound)
-	}
-	if UserData.Pin.String != "" {
-		logruslogger.Log(logruslogger.WarnLevel, UserData.ID, ctx, "pin_already_set", uc.ReqID)
-		return res, errors.New(helper.PinAlreadySet)
-	}
-	if UserData.PhoneValidatedAt.String == "" {
-		logruslogger.Log(logruslogger.WarnLevel, UserData.ID, ctx, "phone_not_validated", uc.ReqID)
-		return res, errors.New(helper.PhoneNotValidated)
-	}
-
-	now := time.Now().UTC()
-
-	//encrypt pin
-	authUc := AuthUC{ContractUC: uc.ContractUC}
-	newpin, err := authUc.Encrypted(data.Pin)
-	if err != nil {
-		logruslogger.Log(logruslogger.WarnLevel, UserData.ID, ctx, "encrypt", uc.ReqID)
-		return res, err
-	}
-
-	_, err = userModel.SetPin(UserData.ID, newpin, now)
-	if err != nil {
-		logruslogger.Log(logruslogger.WarnLevel, UserData.ID, ctx, "query", uc.ReqID)
-		return res, err
-	}
-
-	res.Token, res.ExpiredDate, err = uc.GenerateJwtToken(UserData.ID, "user")
-
+	res.ID = results.ID
 	return res, err
 }
 
